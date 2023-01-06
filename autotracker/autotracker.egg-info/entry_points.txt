@@ -1,0 +1,8 @@
+[deluge.plugin.core]
+autotracker = deluge_autotracker:CorePlugin
+
+[deluge.plugin.gtk3ui]
+autotracker = deluge_autotracker:Gtk3UIPlugin
+
+[deluge.plugin.web]
+autotracker = deluge_autotracker:WebUIPlugin

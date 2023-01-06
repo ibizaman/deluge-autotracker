@@ -1,0 +1,13 @@
+setup.py
+autotracker.egg-info/PKG-INFO
+autotracker.egg-info/SOURCES.txt
+autotracker.egg-info/dependency_links.txt
+autotracker.egg-info/entry_points.txt
+autotracker.egg-info/top_level.txt
+deluge_autotracker/__init__.py
+deluge_autotracker/common.py
+deluge_autotracker/core.py
+deluge_autotracker/gtk3ui.py
+deluge_autotracker/webui.py
+deluge_autotracker/data/autotracker.js
+deluge_autotracker/data/config.ui
