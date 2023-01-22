@@ -1,3 +1,4 @@
+create_dev_link.sh
 setup.py
 autotracker.egg-info/PKG-INFO
 autotracker.egg-info/SOURCES.txt
