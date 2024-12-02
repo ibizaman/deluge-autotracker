@@ -11,7 +11,7 @@ from setuptools import find_packages, setup
 __plugin_name__ = 'autotracker'
 __author__ = 'pierre'
 __author_email__ = 'deluge@pierre.tiserbox.com'
-__version__ = '0.1'
+__version__ = '0.2'
 __url__ = ''
 __license__ = 'GPLv3'
 __description__ = 'Manage trackers automatically'

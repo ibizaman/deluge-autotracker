@@ -9,10 +9,11 @@
 from __future__ import unicode_literals
 
 import logging
+import threading
+import time
 
 import deluge.component as component
 import deluge.configmanager
-from deluge.core.rpcserver import export
 from deluge.plugins.pluginbase import CorePluginBase
 
 log = logging.getLogger(__name__)
@@ -23,85 +24,63 @@ DEFAULT_PREFS = {
 
 class Core(CorePluginBase):
     def enable(self):
-        self.__handlers__ = {
-            'TorrentStateChangedEvent': self.on_statechanged,
-            'TorrentTrackerStatusEvent': self.on_trackerstatus,
-            'TorrentRemovedEvent': self.on_torrentremoved,
-        }
-
         self.config = deluge.configmanager.ConfigManager(
             'autotracker.conf', DEFAULT_PREFS)
 
-        event_manager = component.get('EventManager')
-        for event, handler in self.__handlers__.items():
-            event_manager.register_event_handler(event, handler)
+        self._timer = RepeatedTimer(5, checkSpeed, self.config)
 
     def disable(self):
-        event_manager = component.get('EventManager')
-        for event, handler in self.__handlers__.items():
-            event_manager.deregister_event_handler(event, handler)
+        self._timer.stop()
 
-    def on_statechanged(self, torrent_id, state):
-        if self._maybe_remove_trackers(torrent_id):
-            return
 
-        self._maybe_readd_trackers(torrent_id)
-
-    def on_trackerstatus(self, torrent_id, tracker_status):
-        self._maybe_remove_trackers(torrent_id)
-
-    def on_torrentremoved(self, torrent_id):
-        if torrent_id in self.config:
-            del self.config[torrent_id]
-            self.config.save()
-
-    def update(self):
-        pass
-
-    def _torrent(self, torrent_id):
-        ts = component.get('TorrentManager').torrents
-        if torrent_id not in ts:
-            return None
-        return ts[torrent_id]
-
-    def _maybe_readd_trackers(self, torrent_id):
-        torrent = self._torrent(torrent_id)
-        if torrent is None:
-            return
-
-        if torrent.state == "Seeding" and torrent_id in self.config and len(self.config[torrent_id]) > 0:
-            if len(torrent.trackers) == 0 and len(self.config[torrent_id]) > 0:
-                print("autotracker: adding back trackers for", torrent_id)
-                torrent.set_trackers(self.config[torrent_id])
-                del self.config[torrent_id]
-                self.config.save()
-            return True
-
-        return False
-
-    def _maybe_remove_trackers(self, torrent_id):
-        torrent = self._torrent(torrent_id)
-        if torrent is None:
-            return False
-
-        if torrent.state == "Downloading" and torrent.tracker_status == "Announce OK":
-            print("autotracker: removing trackers for", torrent_id)
+def checkSpeed(config):
+    ts = component.get('TorrentManager').torrents
+    for torrent_id, torrent in ts.items():
+        log.debug(
+            "%s: download rate=%d, peers=%d, last seen complete=%d",
+            torrent.get_name(),
+            torrent.status.download_payload_rate,
+            torrent.status.num_peers,
+            int(time.time() - torrent.status.last_seen_complete),
+        )
+        if torrent.status.download_payload_rate < 0.1 and torrent.status.num_peers < 1:
+            if torrent_id in config and len(config[torrent_id]) > 0:
+                log.info("Adding back %d trackers for %s", len(config[torrent_id]), torrent.get_name())
+                # set_trackers with len > 0 forces reannounce
+                torrent.set_trackers(config[torrent_id])
+                del config[torrent_id]
+                config.save()
+        else:
             if len(torrent.trackers) > 0:
-                self.config[torrent_id] = torrent.trackers
-                self.config.save()
-            torrent.set_trackers([])
-            return True
+                log.info("Removing %d trackers for %s", len(torrent.trackers), torrent.get_name())
+                config[torrent_id] = torrent.trackers
+                config.save()
+                torrent.set_trackers([])
 
-        return False
 
-    @export
-    def set_config(self, config):
-        """Sets the config dictionary"""
-        for key in config:
-            self.config[key] = config[key]
-        self.config.save()
+class RepeatedTimer(object):
+    def __init__(self, interval, function, *args, **kwargs):
+        self._timer = None
+        self.interval = interval
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+        self.is_running = False
+        self.next_call = time.time()
+        self.start()
 
-    @export
-    def get_config(self):
-        """Returns the config dictionary"""
-        return self.config.config
+    def _run(self):
+        self.is_running = False
+        self.start()
+        self.function(*self.args, **self.kwargs)
+
+    def start(self):
+        if not self.is_running:
+            self.next_call += self.interval
+            self._timer = threading.Timer(self.next_call - time.time(), self._run)
+            self._timer.start()
+            self.is_running = True
+
+    def stop(self):
+        self._timer.cancel()
+        self.is_running = False
