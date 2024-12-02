@@ -43,7 +43,7 @@ def checkSpeed(config):
             torrent.status.num_peers,
             int(time.time() - torrent.status.last_seen_complete),
         )
-        if torrent.status.download_payload_rate < 0.1 and torrent.status.num_peers < 1:
+        if (torrent.status.download_payload_rate < 0.1 and torrent.status.num_peers < 1) or torrent.state != "Downloading":
             if torrent_id in config and len(config[torrent_id]) > 0:
                 log.info("Adding back %d trackers for %s", len(config[torrent_id]), torrent.get_name())
                 # set_trackers with len > 0 forces reannounce
