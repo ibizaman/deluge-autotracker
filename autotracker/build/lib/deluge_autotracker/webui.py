@@ -6,7 +6,6 @@
 # This file is part of autotracker and is licensed under GNU GPL 3.0, or later,
 # with the additional special exception to link portions of this program with
 # the OpenSSL library. See LICENSE for more details.
-from __future__ import unicode_literals
 
 import logging
 

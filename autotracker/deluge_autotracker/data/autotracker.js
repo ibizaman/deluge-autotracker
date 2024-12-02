@@ -10,21 +10,29 @@
  *     program with the OpenSSL library. See LICENSE for more details.
  */
 
-autotrackerPlugin = Ext.extend(Deluge.Plugin, {
-    constructor: function(config) {
-        config = Ext.apply({
-            name: 'autotracker'
-        }, config);
-        autotrackerPlugin.superclass.constructor.call(this, config);
+Deluge.plugins.AutotrackerPlugin = Ext.extend(Deluge.Plugin, {
+    name: 'Autotracker',
+
+    static: {
+        prefsPage: null,
     },
 
-    onDisable: function() {
-        deluge.preferences.removePage(this.prefsPage);
+    onDisable: function () {
+        deluge.preferences.removePage(Deluge.plugins.AutotrackerPlugin.prefsPage);
+        Deluge.plugins.AutotrackerPlugin.prefsPage = null;
     },
 
-    onEnable: function() {
-        this.prefsPage = deluge.preferences.addPage(
-            new Deluge.ux.preferences.autotrackerPage());
-    }
+    onEnable: function () {
+        /*
+         * Called for each of the JavaScript files.
+         * This will prevent adding unnecessary tabs to the preferences window.
+         */
+        if (!Deluge.plugins.AutotrackerPlugin.prefsPage) {
+            Deluge.plugins.AutotrackerPlugin.prefsPage = deluge.preferences.addPage(
+                new Deluge.ux.preferences.autotrackerPage()
+            );
+        }
+    },
 });
-new autotrackerPlugin();
+
+Deluge.registerPlugin('AutoAdd', Deluge.plugins.AutotrackerPlugin);
