@@ -18,8 +18,8 @@ Deluge.plugins.AutotrackerPlugin = Ext.extend(Deluge.Plugin, {
     },
 
     onDisable: function () {
-        deluge.preferences.removePage(Deluge.plugins.AutotrackerPlugin.prefsPage);
-        Deluge.plugins.AutotrackerPlugin.prefsPage = null;
+        // deluge.preferences.removePage(Deluge.plugins.AutotrackerPlugin.prefsPage);
+        // Deluge.plugins.AutotrackerPlugin.prefsPage = null;
     },
 
     onEnable: function () {
@@ -28,9 +28,10 @@ Deluge.plugins.AutotrackerPlugin = Ext.extend(Deluge.Plugin, {
          * This will prevent adding unnecessary tabs to the preferences window.
          */
         if (!Deluge.plugins.AutotrackerPlugin.prefsPage) {
-            Deluge.plugins.AutotrackerPlugin.prefsPage = deluge.preferences.addPage(
-                new Deluge.ux.preferences.autotrackerPage()
-            );
+            // No prefs page
+            // Deluge.plugins.AutotrackerPlugin.prefsPage = deluge.preferences.addPage(
+            //     new Deluge.ux.preferences.autotrackerPage()
+            // );
         }
     },
 });
